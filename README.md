@@ -33,12 +33,15 @@ flowchart LR
   and agent-backed tools (`lore_ask`, `lore_account_brief`, `lore_ingest`). The caller's identity limits which
   accounts are visible.
 - **Internal agent** (`lore/agent/runner.py`): one interface, several model providers, set with `LORE_LLM`:
-  `auto` (default: tries `LORE_LLM_CHAIN`, default `anthropic,codex`), `claude` (Claude Code headless, falls back to
-  `anthropic` then `codex` on failure), `anthropic` (direct Messages API tool loop; honours `ANTHROPIC_BASE_URL`,
+  `auto` (default: tries `LORE_LLM_CHAIN`; default `glm,anthropic,codex` when `LORE_GLM_API_KEY` is set, else
+  `anthropic,codex`), `glm` (Zhipu GLM via Z.ai's OpenAI-compatible API; `LORE_GLM_API_KEY`, `LORE_GLM_MODEL` default
+  `glm-5.3`, `LORE_GLM_BASE_URL` default the coding-plan endpoint `https://api.z.ai/api/coding/paas/v4`,
+  `LORE_GLM_THINKING` default `disabled` for speed), `claude` (Claude Code headless, falls back along the same chain
+  on failure), `anthropic` (direct Messages API tool loop; honours `ANTHROPIC_BASE_URL`,
   `ANTHROPIC_API_KEY` / `ANTHROPIC_AUTH_TOKEN`, model from `LORE_ANTHROPIC_MODEL`), `codex` (`codex exec` with the
   ChatGPT login in `~/.codex`, model `LORE_CODEX_MODEL`), `openai`, or `onprem` (any OpenAI-compatible endpoint, e.g.
   Qwen or DeepSeek on vLLM or Ollama inside Singtel, so no customer data leaves the network). The provider actually
-  used is reported, e.g. `[anthropic->codex, 28s, tools: ...]`.
+  used is reported, e.g. `[glm, 16s, tools: ...]`.
 - **Internal MCP** (`lore/internal_mcp.py`): granular tools with scopes. `read` agents cannot write; `write` adds
   append-only wiki tools and governed CRM updates; `actions` adds Teams and meeting proposals.
 - **Wiki** (`lore/kb/store.py`, `knowledge-base/`): raw sources and timeline events are only ever added. Every fact

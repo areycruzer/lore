@@ -3,12 +3,13 @@
   claude     - Claude Code headless (`claude -p`) with the internal MCP as its only tool server
   anthropic  - direct Anthropic Messages API tool loop over the internal MCP tools (works through ANTHROPIC_BASE_URL gateways)
   codex      - `codex exec` (ChatGPT login in ~/.codex) with the internal MCP as its only tool server
+  glm        - Zhipu GLM (Z.ai OpenAI-compatible API, LORE_GLM_API_KEY) running the same tool loop as openai
   openai     - OpenAI chat-completions tool loop over the internal MCP tools
   onprem     - the same loop against any OpenAI-compatible endpoint (vLLM / Ollama serving Qwen or DeepSeek inside
                Singtel), so no customer data leaves the network
-  auto       - try LORE_LLM_CHAIN (default anthropic,codex) in order
+  auto       - try LORE_LLM_CHAIN in order (default glm,anthropic,codex when a GLM key is set, else anthropic,codex)
 
-`claude` falls back to LORE_CLAUDE_FALLBACK (default anthropic,codex) when the CLI fails; the provider actually used is
+`claude` falls back to LORE_CLAUDE_FALLBACK (same default as the chain) when the CLI fails; the provider actually used is
 reported as e.g. "claude->anthropic".
 """
 from __future__ import annotations
@@ -27,7 +28,7 @@ import anyio
 
 from lore import config
 
-PROVIDERS = ("auto", "claude", "anthropic", "codex", "openai", "onprem")
+PROVIDERS = ("auto", "claude", "anthropic", "codex", "glm", "openai", "onprem")
 
 
 @dataclass
@@ -104,7 +105,7 @@ def _run_one(provider: str, task: str, user: str, scope: str, actor: str, allow_
             return _run_async(_run_anthropic, task, user, scope, actor, t0)
         if provider == "codex":
             return _run_codex(task, user, scope, actor, t0)
-        if provider in ("openai", "onprem"):
+        if provider in ("openai", "onprem", "glm"):
             return _run_async(_run_openai_compatible, task, user, scope, actor, provider, t0)
         raise ValueError(f"unknown provider {provider}; use one of {', '.join(PROVIDERS)}")
     except Exception as exc:  # noqa: BLE001
@@ -283,8 +284,15 @@ async def _run_openai_compatible(task: str, user: str, scope: str, actor: str, p
     from mcp.client.stdio import stdio_client
     from openai import AsyncOpenAI
 
+    extra_body = None
     if provider == "openai":
         client, model = AsyncOpenAI(), config.OPENAI_MODEL
+    elif provider == "glm":
+        if not config.GLM_API_KEY:
+            raise RuntimeError("no LORE_GLM_API_KEY set")
+        client, model = AsyncOpenAI(base_url=config.GLM_BASE_URL, api_key=config.GLM_API_KEY, timeout=120.0), config.GLM_MODEL
+        if config.GLM_THINKING:
+            extra_body = {"thinking": {"type": config.GLM_THINKING}}
     else:
         client, model = AsyncOpenAI(base_url=config.ONPREM_BASE_URL, api_key=config.ONPREM_API_KEY), config.ONPREM_MODEL
     calls: list[str] = []
@@ -296,7 +304,7 @@ async def _run_openai_compatible(task: str, user: str, scope: str, actor: str, p
                                                        "parameters": t.inputSchema}} for t in listed.tools]
             messages = [{"role": "system", "content": system_prompt(user, scope)}, {"role": "user", "content": task}]
             for _ in range(config.AGENT_MAX_STEPS):
-                resp = await client.chat.completions.create(model=model, messages=messages, tools=tools)
+                resp = await client.chat.completions.create(model=model, messages=messages, tools=tools, extra_body=extra_body)
                 msg = resp.choices[0].message
                 if not msg.tool_calls:
                     return AgentResult(msg.content or "", provider, time.time() - t0, calls)

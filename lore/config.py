@@ -44,16 +44,22 @@ SF_CLIENT_ID = os.environ.get("SF_CLIENT_ID", "")
 SF_CALLBACK_PORT = int(os.environ.get("SF_CALLBACK_PORT", "8787"))
 SF_TOKEN_DIR = _path("SF_TOKEN_DIR", Path.home() / ".lore" / "salesforce")
 
-# Agent model provider: "auto", "claude" (Claude Code headless), "anthropic", "codex", "openai", or "onprem" (OpenAI-compatible endpoint,
+# Agent model provider: "auto", "claude" (Claude Code headless), "anthropic", "codex", "glm", "openai", or "onprem" (OpenAI-compatible endpoint,
 # e.g. a Qwen / DeepSeek model served on Singtel infrastructure through vLLM or Ollama).
 # "anthropic" calls the Messages API directly (ANTHROPIC_BASE_URL may point at a gateway); "codex" runs `codex exec`
 # with the internal MCP; "auto" tries LORE_LLM_CHAIN in order and keeps the first provider that answers.
 LLM_PROVIDER = os.environ.get("LORE_LLM", "auto")
-LLM_CHAIN = [p.strip() for p in os.environ.get("LORE_LLM_CHAIN", "anthropic,codex").split(",") if p.strip()]
+# Zhipu GLM through Z.ai's OpenAI-compatible API. Coding-plan keys only work on the /api/coding/ endpoint.
+GLM_API_KEY = os.environ.get("LORE_GLM_API_KEY", "")
+GLM_BASE_URL = os.environ.get("LORE_GLM_BASE_URL", "https://api.z.ai/api/coding/paas/v4")
+GLM_MODEL = os.environ.get("LORE_GLM_MODEL", "glm-5.3")
+GLM_THINKING = os.environ.get("LORE_GLM_THINKING", "disabled")  # "enabled", "disabled", or empty for the model default
+_DEFAULT_CHAIN = "glm,anthropic,codex" if GLM_API_KEY else "anthropic,codex"
+LLM_CHAIN = [p.strip() for p in os.environ.get("LORE_LLM_CHAIN", _DEFAULT_CHAIN).split(",") if p.strip()]
 CLAUDE_MODEL = os.environ.get("LORE_CLAUDE_MODEL", "")
 # Claude Code retries API errors (including 401) about 11 times with backoff, which looks like a hang.
 CLAUDE_MAX_RETRIES = os.environ.get("LORE_CLAUDE_MAX_RETRIES", "2")
-CLAUDE_FALLBACK = [p.strip() for p in os.environ.get("LORE_CLAUDE_FALLBACK", "anthropic,codex").split(",") if p.strip()]
+CLAUDE_FALLBACK = [p.strip() for p in os.environ.get("LORE_CLAUDE_FALLBACK", _DEFAULT_CHAIN).split(",") if p.strip()]
 ANTHROPIC_BASE_URL = os.environ.get("ANTHROPIC_BASE_URL", "https://api.anthropic.com").rstrip("/")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 ANTHROPIC_AUTH_TOKEN = os.environ.get("ANTHROPIC_AUTH_TOKEN", "")
