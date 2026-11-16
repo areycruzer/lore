@@ -85,7 +85,7 @@ mcp-context-forge) with SSO; the gateway passes the user as the `x-lore-user` he
 scripts/public_tunnel.sh OWN-002   # prints the Connect page and MCP URL, then starts the server
 ```
 
-Open the printed **Connect page** (`https://<random>.app.lhr.life/?user=OWN-002`) in a browser. It shows server
+Open the printed **Connect page** (`https://<random>.free.pinggy.net/?user=OWN-002`) in a browser. It shows server
 status and has:
 
 - **Connect to ChatGPT**: copies the MCP URL and opens ChatGPT Plugins. Then click + → Add custom MCP server, paste
@@ -98,8 +98,10 @@ In ChatGPT Business or Enterprise, an admin can publish the plugin to the worksp
 For production, OpenAI's Secure MCP Tunnel lets ChatGPT reach an on-prem Lore with outbound-only HTTPS.
 
 `?user=` sets the Lore user, and access
-scope still applies. The script uses a localhost.run SSH tunnel because some networks block Cloudflare Tunnel's port
-7844. `cloudflared tunnel --url http://127.0.0.1:8848` also works where that port is open. Any tunnel hostname
+scope still applies. The script uses an SSH tunnel because some networks block Cloudflare Tunnel's port 7844. The
+default, Pinggy (`LORE_TUNNEL=pinggy`, SSH on port 443), keeps one URL for the whole session but closes after 60
+minutes, so start it shortly before a demo. `LORE_TUNNEL=lhr` uses localhost.run instead: no time limit, but its
+hostname rotates about every 20 minutes and each rotation breaks the ChatGPT plugin URL. `cloudflared tunnel --url http://127.0.0.1:8848` also works where that port is open. Any tunnel hostname
 must be listed in `LORE_PUBLIC_ALLOWED_HOSTS`, because the MCP SDK rejects non-localhost `Host` headers.
 
 ## Demo story (ACC-0001, Demo Asterforge Manufacturing)
