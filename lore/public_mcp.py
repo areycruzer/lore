@@ -10,6 +10,7 @@ import json
 import os
 import time
 from typing import Any
+from urllib.parse import quote
 
 from mcp.server.fastmcp import Context, FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
@@ -374,31 +375,32 @@ def ops_to_sales() -> str:
     return _prompt("ops_to_sales")
 
 
-_INFO_PAGE = """<!doctype html><meta charset="utf-8"><title>Lore MCP</title>
-<body style="font-family:system-ui;max-width:640px;margin:48px auto;line-height:1.5">
-<h1>Lore MCP server is running</h1>
-<p>This address is for MCP clients, not web browsers. In ChatGPT, add this page's URL as a custom connector
-(no authentication). Keep the <code>/mcp?user=...</code> part; <code>user</code> is the Lore user whose access scope applies.</p>
-<p>{tools} tools available.</p></body>"""
-
-
 def http_app():
-    """Streamable HTTP app that shows a short info page to browsers instead of the SDK's JSON-RPC error."""
+    """Streamable HTTP app. Browsers opening `/` or `/mcp` get the Connect Lore page instead of the SDK's JSON-RPC error."""
+    from starlette.requests import Request
     from starlette.responses import HTMLResponse
+
+    from lore import connect_page
 
     app = mcp.streamable_http_app()
     mcp_path = mcp.settings.streamable_http_path.rstrip("/")
 
     async def wrapped(scope, receive, send):
         if scope["type"] == "http" and scope["method"] == "GET" and scope["path"].rstrip("/") in ("", mcp_path):
-            accept = dict(scope.get("headers") or []).get(b"accept", b"").decode()
-            if "text/event-stream" not in accept:
-                n = len(await mcp.list_tools())
-                return await HTMLResponse(_INFO_PAGE.replace("{tools}", str(n)))(scope, receive, send)
+            req = Request(scope)
+            if "text/event-stream" not in req.headers.get("accept", ""):
+                base = connect_page.base_url(req.headers, f"{mcp.settings.host}:{mcp.settings.port}")
+                uid = req.query_params.get("user") or os.environ.get("LORE_USER", config.DEFAULT_USER)
+                who = principal(uid)
+                label = f"{who.name} ({who.role}, {len(who.accounts)} accounts)" if who.role != "unknown" else f"{uid} (unknown user)"
+                page = connect_page.render(
+                    mcp_url=f"{base}{mcp_path}?user={quote(uid)}", page_url=f"{base}/?user={quote(uid)}", user_label=label,
+                    tools=len(await mcp.list_tools()), crm=config.CRM_BACKEND,
+                    agent=config.LLM_PROVIDER if config.LLM_PROVIDER != "auto" else " > ".join(config.LLM_CHAIN))
+                return await HTMLResponse(page)(scope, receive, send)
         await app(scope, receive, send)
 
     return wrapped
-
 
 def main(transport: str = "stdio") -> None:
     if transport == "streamable-http":

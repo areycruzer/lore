@@ -35,8 +35,9 @@ if [ -z "$HOST" ]; then
 fi
 
 echo
-echo "ChatGPT connector URL (no auth): https://${HOST}/mcp?user=${USER_ID}"
-echo "localhost.run rotates free hostnames; a new URL is printed here when that happens. Update the connector with it."
+echo "Connect page (open in a browser): https://${HOST}/?user=${USER_ID}"
+echo "MCP server URL (no auth):         https://${HOST}/mcp?user=${USER_ID}"
+echo "localhost.run rotates free hostnames; new links are printed here when that happens."
 echo
 
 # Print the new URL whenever localhost.run rotates the hostname.
@@ -47,7 +48,8 @@ echo
     h="$(grep -oE "$HOST_RE" "$LOG" | tail -1 || true)"
     if [ -n "$h" ] && [ "$h" != "$last" ]; then
       echo
-      echo ">>> Tunnel hostname changed. New ChatGPT connector URL: https://${h}/mcp?user=${USER_ID}"
+      echo ">>> Tunnel hostname changed. New connect page: https://${h}/?user=${USER_ID}"
+      echo ">>> New MCP server URL (update the ChatGPT plugin): https://${h}/mcp?user=${USER_ID}"
       echo
       last="$h"
     fi

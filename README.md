@@ -82,10 +82,22 @@ ChatGPT needs a public HTTPS URL. In production, put Lore behind Singtel's gatew
 mcp-context-forge) with SSO; the gateway passes the user as the `x-lore-user` header. For a demo:
 
 ```bash
-scripts/public_tunnel.sh OWN-002   # prints https://<random>.app.lhr.life/mcp?user=OWN-002 and starts the server
+scripts/public_tunnel.sh OWN-002   # prints the Connect page and MCP URL, then starts the server
 ```
 
-In ChatGPT, add that URL as a custom connector with no authentication. `?user=` sets the Lore user, and access
+Open the printed **Connect page** (`https://<random>.app.lhr.life/?user=OWN-002`) in a browser. It shows server
+status and has:
+
+- **Connect to ChatGPT**: copies the MCP URL and opens ChatGPT Plugins. Then click + → Add custom MCP server, paste
+  the URL, choose No authentication, and click Create as a plugin → Install. ChatGPT has no link that pre-fills this
+  form yet. On Plus or Pro, turn on Developer mode at chatgpt.com/settings/security if the option is missing.
+- **Add to Claude / Cursor / VS Code**: documented one-click install links.
+- Example questions, and a QR code for the page.
+
+In ChatGPT Business or Enterprise, an admin can publish the plugin to the workspace so staff just click Install.
+For production, OpenAI's Secure MCP Tunnel lets ChatGPT reach an on-prem Lore with outbound-only HTTPS.
+
+`?user=` sets the Lore user, and access
 scope still applies. The script uses a localhost.run SSH tunnel because some networks block Cloudflare Tunnel's port
 7844. `cloudflared tunnel --url http://127.0.0.1:8848` also works where that port is open. Any tunnel hostname
 must be listed in `LORE_PUBLIC_ALLOWED_HOSTS`, because the MCP SDK rejects non-localhost `Host` headers.
