@@ -49,13 +49,25 @@ flowchart LR
   calendar > press > research). Changes are new events that supersede old ones; contradictions are flagged with a
   winner. Every write is a git commit and an entry in a hash-chained audit ledger.
 
+## Use Lore in ChatGPT without a terminal
+
+1. Open the `v2` folder in Finder and double-click **Start Lore** (`Start Lore.command`). The first time, macOS may
+   ask for permission: right-click it, choose **Open**, then **Open** again.
+2. A Terminal window opens and the **Connect Lore** page opens in your browser. Keep the Terminal window open; close
+   it to stop Lore.
+3. On the Connect Lore page, pick who you are, click **Connect to ChatGPT**, and fill in ChatGPT's form as the page
+   shows (each value has a Copy button). Then type `@Lore` in a new chat and pick Lore before asking a question.
+
+The page shows in plain language whether Lore is running, whether ChatGPT can reach it, and how long the free public
+link has left. It warns you when the link has changed since you set up ChatGPT (it changes every time Lore restarts),
+and it has fixes for common problems. Double-clicking **Start Lore** again while Lore is running just reopens the page.
 ## Quick start
 
 ```bash
 cd v2
 uv sync
 uv run python -m lore.kb.seed --reset   # build the wiki from the synthetic CRM export (~1,200 sources, ~1,800 facts)
-uv run pytest -q                        # 52 tests
+uv run pytest -q                        # 65 tests
 uv run python scripts/smoke_mcp.py      # starts both MCP servers and calls their tools
 uv run python scripts/demo.py           # the ACC-0001 story through the public MCP (~3 s)
 uv run python scripts/demo.py --agent   # plus agent Q&A, Vexa transcript ingest and a brief (needs a working model provider, see LORE_LLM)
@@ -82,26 +94,29 @@ ChatGPT needs a public HTTPS URL. In production, put Lore behind Singtel's gatew
 mcp-context-forge) with SSO; the gateway passes the user as the `x-lore-user` header. For a demo:
 
 ```bash
-scripts/public_tunnel.sh OWN-002   # prints the Connect page and MCP URL, then starts the server
+scripts/public_tunnel.sh OWN-002   # what Start Lore runs: public link, server, then opens the Connect page
 ```
 
-Open the printed **Connect page** (`https://<random>.free.pinggy.net/?user=OWN-002`) in a browser. It shows server
-status and has:
+The script copies the ChatGPT link to the clipboard and opens the **Connect Lore** page at
+`http://127.0.0.1:8848/?user=OWN-002` (set `LORE_NO_BROWSER=1` to skip). On this computer the page shows the public
+link, which it reads from `var/public_url.json` (the script writes it and removes it on exit). The page also works at
+the public address (`https://<random>.free.pinggy.net/?user=OWN-002`), and it has:
 
-- **Connect to ChatGPT**: copies the MCP URL and opens ChatGPT Plugins. Then click + → Add custom MCP server, paste
-  the URL, choose No authentication, and click Create as a plugin → Install. ChatGPT has no link that pre-fills this
+- **Connect to ChatGPT**: copies the MCP URL and opens ChatGPT Plugins, with ChatGPT's "Add custom MCP server" form
+  laid out field by field (Name, Description, Server URL, No authentication). ChatGPT has no link that pre-fills this
   form yet. On Plus or Pro, turn on Developer mode at chatgpt.com/settings/security if the option is missing.
+- **Who are you?**: switches the Lore user (`?user=`); access scope still applies.
+- Live status from `/api/status` (server up, public link reachable through the tunnel, minutes left) and `/healthz`.
 - **Add to Claude / Cursor / VS Code**: documented one-click install links.
-- Example questions, and a QR code for the page.
-
+- Example questions, troubleshooting, and a QR code for the page.
 In ChatGPT Business or Enterprise, an admin can publish the plugin to the workspace so staff just click Install.
 For production, OpenAI's Secure MCP Tunnel lets ChatGPT reach an on-prem Lore with outbound-only HTTPS.
 
-`?user=` sets the Lore user, and access
-scope still applies. The script uses an SSH tunnel because some networks block Cloudflare Tunnel's port 7844. The
+The script uses an SSH tunnel because some networks block Cloudflare Tunnel's port 7844. The
 default, Pinggy (`LORE_TUNNEL=pinggy`, SSH on port 443), keeps one URL for the whole session but closes after 60
 minutes, so start it shortly before a demo. `LORE_TUNNEL=lhr` uses localhost.run instead: no time limit, but its
-hostname rotates about every 20 minutes and each rotation breaks the ChatGPT plugin URL. `cloudflared tunnel --url http://127.0.0.1:8848` also works where that port is open. Any tunnel hostname
+hostname rotates about every 20 minutes and each rotation breaks the ChatGPT plugin URL.
+`cloudflared tunnel --url http://127.0.0.1:8848` also works where that port is open. Any tunnel hostname
 must be listed in `LORE_PUBLIC_ALLOWED_HOSTS`, because the MCP SDK rejects non-localhost `Host` headers.
 
 ## Demo story (ACC-0001, Demo Asterforge Manufacturing)

@@ -375,10 +375,50 @@ def ops_to_sales() -> str:
     return _prompt("ops_to_sales")
 
 
+PUBLIC_URL_FILE = config.VAR_DIR / "public_url.json"
+_reach_cache: dict[str, tuple[float, bool]] = {}
+
+
+def public_info() -> dict | None:
+    """The public tunnel address written by scripts/public_tunnel.sh: {"url": ..., "expires_at": epoch or null}."""
+    try:
+        info = json.loads(PUBLIC_URL_FILE.read_text())
+    except (OSError, ValueError):
+        return None
+    return info if isinstance(info, dict) and str(info.get("url", "")).startswith("https://") else None
+
+
+async def _public_reachable(url: str) -> bool:
+    """Round-trip through the tunnel to our own /healthz. Cached briefly so status polling doesn't hammer the tunnel."""
+    import httpx
+
+    hit = _reach_cache.get(url)
+    if hit and time.monotonic() - hit[0] < 20:
+        return hit[1]
+    try:
+        async with httpx.AsyncClient(timeout=8) as client:
+            ok = (await client.get(f"{url}/healthz")).status_code == 200
+    except httpx.HTTPError:
+        ok = False
+    _reach_cache[url] = (time.monotonic(), ok)
+    return ok
+
+
+def _users() -> list[tuple[str, str]]:
+    from lore.connectors.crm import load_table
+
+    out = []
+    for o in load_table("owners"):
+        p = principal(o["owner_id"])
+        out.append((p.user_id, f"{p.name} ({p.role.replace('_', ' ')}, {len(p.accounts)} accounts)"))
+    return out
+
+
 def http_app():
-    """Streamable HTTP app. Browsers opening `/` or `/mcp` get the Connect Lore page instead of the SDK's JSON-RPC error."""
+    """Streamable HTTP app. Browsers opening `/` or `/mcp` get the Connect Lore page instead of the SDK's JSON-RPC error;
+    `/healthz` and `/api/status` feed the page's live status."""
     from starlette.requests import Request
-    from starlette.responses import HTMLResponse
+    from starlette.responses import HTMLResponse, JSONResponse
 
     from lore import connect_page
 
@@ -386,18 +426,34 @@ def http_app():
     mcp_path = mcp.settings.streamable_http_path.rstrip("/")
 
     async def wrapped(scope, receive, send):
-        if scope["type"] == "http" and scope["method"] == "GET" and scope["path"].rstrip("/") in ("", mcp_path):
+        if scope["type"] == "http" and scope["method"] == "GET":
+            path = scope["path"].rstrip("/")
+            if path == "/healthz":
+                return await JSONResponse({"ok": True})(scope, receive, send)
             req = Request(scope)
-            if "text/event-stream" not in req.headers.get("accept", ""):
+            if path == "/api/status":
+                pub = public_info()
+                body = {"ok": True, "tools": len(await mcp.list_tools()), "crm": config.CRM_BACKEND,
+                        "public_url": pub["url"] if pub else None, "expires_at": pub.get("expires_at") if pub else None,
+                        "public_ok": await _public_reachable(pub["url"]) if pub else None}
+                return await JSONResponse(body, headers={"cache-control": "no-store"})(scope, receive, send)
+            if path in ("", mcp_path) and "text/event-stream" not in req.headers.get("accept", ""):
                 base = connect_page.base_url(req.headers, f"{mcp.settings.host}:{mcp.settings.port}")
+                pub = public_info()
+                # Opened on the computer running Lore: show the public link, because that's the one ChatGPT needs.
+                if connect_page.is_local(base.split("://", 1)[1]) and pub:
+                    base = pub["url"].rstrip("/")
+                reachable = not connect_page.is_local(base.split("://", 1)[1])
                 uid = req.query_params.get("user") or os.environ.get("LORE_USER", config.DEFAULT_USER)
                 who = principal(uid)
-                label = f"{who.name} ({who.role}, {len(who.accounts)} accounts)" if who.role != "unknown" else f"{uid} (unknown user)"
+                label = f"{who.name} ({who.role.replace('_', ' ')}, {len(who.accounts)} accounts)" if who.role != "unknown" else f"{uid} (unknown user)"
                 page = connect_page.render(
                     mcp_url=f"{base}{mcp_path}?user={quote(uid)}", page_url=f"{base}/?user={quote(uid)}", user_label=label,
                     tools=len(await mcp.list_tools()), crm=config.CRM_BACKEND,
-                    agent=config.LLM_PROVIDER if config.LLM_PROVIDER != "auto" else " > ".join(config.LLM_CHAIN))
-                return await HTMLResponse(page)(scope, receive, send)
+                    agent=config.LLM_PROVIDER if config.LLM_PROVIDER != "auto" else " > ".join(config.LLM_CHAIN),
+                    users=_users(), user_id=uid, reachable=reachable,
+                    expires_at=pub.get("expires_at") if pub and reachable else None)
+                return await HTMLResponse(page, headers={"cache-control": "no-store"})(scope, receive, send)
         await app(scope, receive, send)
 
     return wrapped
