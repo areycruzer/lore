@@ -70,6 +70,20 @@ def parse_description(desc: str | None) -> dict:
     return out
 
 
+def merge_live(description: str | None, live: dict) -> dict:
+    """Export columns parsed from Description fill gaps; live Salesforce fields win, since Description is written once
+    at load time and goes stale after any edit (including Lore's own governed writes)."""
+    return {**parse_description(description), **{k: v for k, v in live.items() if v is not None}}
+
+
+def _fraction(pct: Any) -> float | None:
+    """Salesforce stores Probability as a percentage; the export (and the CSV backend) use 0-1."""
+    try:
+        return round(float(pct) / 100, 4)
+    except (TypeError, ValueError):
+        return None
+
+
 def _truthy(v: Any) -> bool:
     return str(v).lower() == "true"
 
@@ -88,13 +102,12 @@ class SalesforceCRM:
 
     # ------------------------------------------------------------ reads mapped to export keys
     def _account(self, r: dict) -> dict:
-        d = parse_description(r.get("Description"))
-        return {"sf_id": r.get("Id"), "account_id": r.get("Lore_Id__c"), "account_name": r.get("Name"), "industry": r.get("Industry"),
+        return merge_live(r.get("Description"), {"sf_id": r.get("Id"), "account_id": r.get("Lore_Id__c"), "account_name": r.get("Name"), "industry": r.get("Industry"),
                 "employee_count": r.get("NumberOfEmployees"), "annual_revenue_sgd": r.get("AnnualRevenue"), "city": r.get("BillingCity"),
                 "country": r.get("BillingCountry"), "account_status": r.get("Lore_Status__c") or r.get("Type"), "website": r.get("Website"),
                 "owner_id": r.get("Lore_Owner__c"), "owned_product_ids": r.get("Lore_Owned_Products__c"),
                 "contract_renewal_date": r.get("Lore_Renewal_Date__c"), "budget_estimate_sgd": r.get("Lore_Budget_SGD__c"),
-                "relationship_health": r.get("Lore_Relationship_Health__c"), **d}
+                "relationship_health": r.get("Lore_Relationship_Health__c")})
 
     def list_accounts(self) -> list[dict]:
         return [self._account(r) for r in self.query("Account", ACCOUNT_FIELDS, "Lore_Id__c != null", "Lore_Id__c", 200)]
@@ -114,18 +127,19 @@ class SalesforceCRM:
 
     def get_opportunities(self, account_id: str) -> list[dict]:
         rows = self.query("Opportunity", OPP_FIELDS, f"Account.Lore_Id__c = '{esc(account_id)}'", "CloseDate", 200)
-        return [{"sf_id": r.get("Id"), "opportunity_id": r.get("Lore_Id__c"), "account_id": account_id, "opportunity_name": r.get("Name"),
-                 "stage": r.get("StageName"), "amount_sgd": r.get("Amount"), "probability": r.get("Probability"),
-                 "expected_close_date": r.get("CloseDate"), "next_step": r.get("NextStep"), **parse_description(r.get("Description"))}
+        return [merge_live(r.get("Description"), {
+                    "sf_id": r.get("Id"), "opportunity_id": r.get("Lore_Id__c"), "account_id": account_id, "opportunity_name": r.get("Name"),
+                    "stage": r.get("StageName"), "amount_sgd": r.get("Amount"), "probability": _fraction(r.get("Probability")),
+                    "expected_close_date": r.get("CloseDate"), "next_step": r.get("NextStep")})
                 for r in rows]
 
     def get_cases(self, account_id: str) -> list[dict]:
         rows = self.query("Case", CASE_FIELDS, f"Account.Lore_Id__c = '{esc(account_id)}'", "CreatedDate", 200)
-        return [{"sf_id": r.get("Id"), "ticket_id": r.get("Lore_Id__c"), "account_id": account_id, "subject": r.get("Subject"),
+        return [merge_live(r.get("Description"), {"sf_id": r.get("Id"), "ticket_id": r.get("Lore_Id__c"), "account_id": account_id, "subject": r.get("Subject"),
                  "ticket_status": r.get("Status"), "priority": r.get("Priority"), "channel": r.get("Origin"),
                  "sales_signal": str(_truthy(r.get("Lore_Sales_Signal__c"))).lower(), "signal_type": r.get("Lore_Signal_Type__c"),
                  "signal_product_id": r.get("Lore_Signal_Product__c"), "outreach_gate": r.get("Lore_Outreach_Gate__c"),
-                 "support_tier": r.get("Lore_Tier__c"), **parse_description(r.get("Description"))} for r in rows]
+                 "support_tier": r.get("Lore_Tier__c")}) for r in rows]
 
     def soql(self, query: str) -> list[dict]:
         m = re.match(r"\s*select\s+(.+?)\s+from\s+(\w+)(?:\s+where\s+(.+?))?(?:\s+order\s+by\s+(.+?))?(?:\s+limit\s+(\d+))?\s*$",

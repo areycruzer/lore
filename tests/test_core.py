@@ -179,3 +179,25 @@ def test_inbox_ingest_files_raw_without_agent(kb, tmp_path):
     assert len(ok) == 1 and ok[0]["stored"].startswith("raw/")
     assert len(bad) == 1 and (inbox / "bad.md").exists()
     assert (inbox / "processed" / "note.md").exists()
+
+
+def test_salesforce_live_fields_win_over_stale_description(monkeypatch):
+    from lore.connectors import salesforce_crm as sfc
+
+    class Fake:
+        @staticmethod
+        def query(sobject, fields, where=None, order_by=None, limit=None):
+            if sobject == "Opportunity":
+                return [{"Id": "006x", "Lore_Id__c": "OPP-0002", "Name": "Security Programme", "StageName": "Qualification",
+                         "Amount": 120000, "Probability": 40, "CloseDate": "2026-12-21", "NextStep": "Service review 19 Nov",
+                         "Description": "next_step: Old step\nprobability: 0.25\npain_summary: Audit evidence"}]
+            return [{"Id": "500x", "Lore_Id__c": "TKT-0003", "Subject": "Outage", "Status": "Working", "Priority": "High",
+                     "Description": "ticket_status: in_progress\npriority: critical\nevidence_excerpt: repeated drops"}]
+
+    monkeypatch.setattr(sfc, "_backend", lambda: Fake)
+    crm = sfc.SalesforceCRM()
+    opp = crm.get_opportunities("ACC-0001")[0]
+    assert opp["next_step"] == "Service review 19 Nov" and opp["probability"] == 0.4
+    assert opp["pain_summary"] == "Audit evidence"
+    case = crm.get_cases("ACC-0001")[0]
+    assert (case["ticket_status"], case["priority"], case["evidence_excerpt"]) == ("Working", "High", "repeated drops")
