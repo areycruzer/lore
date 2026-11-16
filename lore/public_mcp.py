@@ -28,10 +28,15 @@ Meetings outrank email, CRM, ops reports and press. Respect gates: service_recov
 pitching. CRM updates are governed (allowlisted fields, your accounts only) and mirrored into the wiki history."""
 
 _LOCAL_HOSTS = ["127.0.0.1:*", "localhost:*", "[::1]:*"]
-_security = TransportSecuritySettings(
-    allowed_hosts=_LOCAL_HOSTS + config.PUBLIC_ALLOWED_HOSTS,
-    allowed_origins=[f"http://{h}" for h in _LOCAL_HOSTS] + [f"https://{h}" for h in config.PUBLIC_ALLOWED_HOSTS],
-) if config.PUBLIC_ALLOWED_HOSTS else None
+if "*" in config.PUBLIC_ALLOWED_HOSTS:
+    _security = TransportSecuritySettings(enable_dns_rebinding_protection=False)
+elif config.PUBLIC_ALLOWED_HOSTS:
+    _security = TransportSecuritySettings(
+        allowed_hosts=_LOCAL_HOSTS + config.PUBLIC_ALLOWED_HOSTS,
+        allowed_origins=[f"http://{h}" for h in _LOCAL_HOSTS] + [f"https://{h}" for h in config.PUBLIC_ALLOWED_HOSTS],
+    )
+else:
+    _security = None
 mcp = FastMCP("lore", log_level="WARNING", instructions=INSTRUCTIONS, host=config.PUBLIC_HOST, port=config.PUBLIC_PORT,
               transport_security=_security)
 kb = KnowledgeBase()

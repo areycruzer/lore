@@ -80,7 +80,8 @@ AGENT_TIMEOUT_S = int(os.environ.get("LORE_AGENT_TIMEOUT_S", "240"))
 # Public MCP HTTP transport.
 PUBLIC_HOST = os.environ.get("LORE_PUBLIC_HOST", "127.0.0.1")
 PUBLIC_PORT = int(os.environ.get("LORE_PUBLIC_PORT", "8848"))
-# Extra Host headers to accept, e.g. a tunnel hostname (comma separated). The MCP SDK rejects non-localhost hosts otherwise.
+# Extra Host headers to accept, e.g. a tunnel hostname (comma separated); "*" accepts any host, for tunnels whose
+# hostname rotates. The MCP SDK rejects non-localhost hosts otherwise.
 PUBLIC_ALLOWED_HOSTS = [h.strip() for h in os.environ.get("LORE_PUBLIC_ALLOWED_HOSTS", "").split(",") if h.strip()]
 
 # "Today" for the demo dataset (snapshot date of the synthetic CRM export).
