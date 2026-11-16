@@ -84,6 +84,14 @@ def _fraction(pct: Any) -> float | None:
         return None
 
 
+def _weighted(amount: Any, pct: Any) -> float | None:
+    """Same as Salesforce's Expected Revenue; the load-time value in Description goes stale when Amount changes."""
+    try:
+        return round(float(amount) * float(pct) / 100, 2)
+    except (TypeError, ValueError):
+        return None
+
+
 def _truthy(v: Any) -> bool:
     return str(v).lower() == "true"
 
@@ -130,7 +138,8 @@ class SalesforceCRM:
         return [merge_live(r.get("Description"), {
                     "sf_id": r.get("Id"), "opportunity_id": r.get("Lore_Id__c"), "account_id": account_id, "opportunity_name": r.get("Name"),
                     "stage": r.get("StageName"), "amount_sgd": r.get("Amount"), "probability": _fraction(r.get("Probability")),
-                    "expected_close_date": r.get("CloseDate"), "next_step": r.get("NextStep")})
+                    "expected_close_date": r.get("CloseDate"), "next_step": r.get("NextStep"),
+                    "weighted_amount_sgd": _weighted(r.get("Amount"), r.get("Probability"))})
                 for r in rows]
 
     def get_cases(self, account_id: str) -> list[dict]:

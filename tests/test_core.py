@@ -190,7 +190,7 @@ def test_salesforce_live_fields_win_over_stale_description(monkeypatch):
             if sobject == "Opportunity":
                 return [{"Id": "006x", "Lore_Id__c": "OPP-0002", "Name": "Security Programme", "StageName": "Qualification",
                          "Amount": 120000, "Probability": 40, "CloseDate": "2026-12-21", "NextStep": "Service review 19 Nov",
-                         "Description": "next_step: Old step\nprobability: 0.25\npain_summary: Audit evidence"}]
+                         "Description": "next_step: Old step\nprobability: 0.25\nweighted_amount_sgd: 4340.25\npain_summary: Audit evidence"}]
             return [{"Id": "500x", "Lore_Id__c": "TKT-0003", "Subject": "Outage", "Status": "Working", "Priority": "High",
                      "Description": "ticket_status: in_progress\npriority: critical\nevidence_excerpt: repeated drops"}]
 
@@ -198,6 +198,6 @@ def test_salesforce_live_fields_win_over_stale_description(monkeypatch):
     crm = sfc.SalesforceCRM()
     opp = crm.get_opportunities("ACC-0001")[0]
     assert opp["next_step"] == "Service review 19 Nov" and opp["probability"] == 0.4
-    assert opp["pain_summary"] == "Audit evidence"
+    assert opp["pain_summary"] == "Audit evidence" and opp["weighted_amount_sgd"] == 48000.0
     case = crm.get_cases("ACC-0001")[0]
     assert (case["ticket_status"], case["priority"], case["evidence_excerpt"]) == ("Working", "High", "repeated drops")
