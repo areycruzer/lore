@@ -369,7 +369,38 @@ def ops_to_sales() -> str:
     return _prompt("ops_to_sales")
 
 
+_INFO_PAGE = """<!doctype html><meta charset="utf-8"><title>Lore MCP</title>
+<body style="font-family:system-ui;max-width:640px;margin:48px auto;line-height:1.5">
+<h1>Lore MCP server is running</h1>
+<p>This address is for MCP clients, not web browsers. In ChatGPT, add this page's URL as a custom connector
+(no authentication). Keep the <code>/mcp?user=...</code> part; <code>user</code> is the Lore user whose access scope applies.</p>
+<p>{tools} tools available.</p></body>"""
+
+
+def http_app():
+    """Streamable HTTP app that shows a short info page to browsers instead of the SDK's JSON-RPC error."""
+    from starlette.responses import HTMLResponse
+
+    app = mcp.streamable_http_app()
+    mcp_path = mcp.settings.streamable_http_path.rstrip("/")
+
+    async def wrapped(scope, receive, send):
+        if scope["type"] == "http" and scope["method"] == "GET" and scope["path"].rstrip("/") in ("", mcp_path):
+            accept = dict(scope.get("headers") or []).get(b"accept", b"").decode()
+            if "text/event-stream" not in accept:
+                n = len(await mcp.list_tools())
+                return await HTMLResponse(_INFO_PAGE.replace("{tools}", str(n)))(scope, receive, send)
+        await app(scope, receive, send)
+
+    return wrapped
+
+
 def main(transport: str = "stdio") -> None:
+    if transport == "streamable-http":
+        import uvicorn
+
+        uvicorn.run(http_app(), host=mcp.settings.host, port=mcp.settings.port, log_level="warning")
+        return
     mcp.run(transport)
 
 
