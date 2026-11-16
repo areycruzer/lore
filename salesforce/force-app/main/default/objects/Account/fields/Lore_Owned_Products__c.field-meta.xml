@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Lore_Owned_Products__c</fullName>
+    <description>Pipe-separated Lore product ids the account already owns.</description>
+    <label>Lore Owned Products</label>
+    <length>255</length>
+    <required>false</required>
+    <type>Text</type>
+</CustomField>

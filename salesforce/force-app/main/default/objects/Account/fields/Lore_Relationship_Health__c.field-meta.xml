@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Lore_Relationship_Health__c</fullName>
+    <description>healthy, developing or at_risk.</description>
+    <label>Lore Relationship Health</label>
+    <length>40</length>
+    <required>false</required>
+    <type>Text</type>
+</CustomField>

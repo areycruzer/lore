@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Lore_Id__c</fullName>
+    <description>Stable activity id from the Lore export (ACT-). External ID (activity fields cannot be Unique); the loader inserts new Tasks and updates existing ones matched on this value.</description>
+    <externalId>true</externalId>
+    <label>Lore Id</label>
+    <length>40</length>
+    <required>false</required>
+    <type>Text</type>
+</CustomField>

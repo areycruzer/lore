@@ -1,0 +1,28 @@
+{
+  "id": 4127,
+  "platform": "teams",
+  "native_meeting_id": "3817264905123",
+  "constructed_meeting_url": "https://teams.microsoft.com/meet/3817264905123",
+  "status": "completed",
+  "start_time": "2026-11-17T02:00:04Z",
+  "end_time": "2026-11-17T02:31:40Z",
+  "data": {
+    "name": "Asterforge x Singtel: RCA close-out and SD-WAN phase one",
+    "participants": ["Demo Team Member 02", "Demo Avery Tan 001", "Demo Sam Lee 001"],
+    "languages": ["en"]
+  },
+  "segments": [
+    {"segment_id": "sess_a41f:spk1:3200", "speaker": "Demo Team Member 02", "text": "Thanks both for making time. First item: did the team get through the RCA for the October outage at the Tuas plant?", "start": 3.2, "end": 9.8, "language": "en", "completed": true, "confidence": 0.94, "absolute_start_time": "2026-11-17T02:00:07.200Z", "absolute_end_time": "2026-11-17T02:00:13.800Z"},
+    {"segment_id": "sess_a41f:spk2:11100", "speaker": "Demo Avery Tan 001", "text": "We did. We reviewed it on Friday and we're accepting the RCA as written. The fibre cut and the failover timings match what our own logs show.", "start": 11.1, "end": 19.6, "language": "en", "completed": true, "confidence": 0.95, "absolute_start_time": "2026-11-17T02:00:15.100Z", "absolute_end_time": "2026-11-17T02:00:23.600Z"},
+    {"segment_id": "sess_a41f:spk3:20400", "speaker": "Demo Sam Lee 001", "text": "Agreed. The only follow-up from my side is the alerting delay, but the corrective actions in section four cover it.", "start": 20.4, "end": 27.0, "language": "en", "completed": true, "confidence": 0.92, "absolute_start_time": "2026-11-17T02:00:24.400Z", "absolute_end_time": "2026-11-17T02:00:31.000Z"},
+    {"segment_id": "sess_a41f:spk1:28300", "speaker": "Demo Team Member 02", "text": "Great, I'll record the RCA as accepted and close the service ticket. Next, SD-WAN. Where did you land on phase one?", "start": 28.3, "end": 34.9, "language": "en", "completed": true, "confidence": 0.95, "absolute_start_time": "2026-11-17T02:00:32.300Z", "absolute_end_time": "2026-11-17T02:00:38.900Z"},
+    {"segment_id": "sess_a41f:spk2:36000", "speaker": "Demo Avery Tan 001", "text": "Phase one is two branches: Johor Bahru and the Penang warehouse. We want those cut over first, then we'll look at the rest of the sites.", "start": 36.0, "end": 44.2, "language": "en", "completed": true, "confidence": 0.93, "absolute_start_time": "2026-11-17T02:00:40.000Z", "absolute_end_time": "2026-11-17T02:00:48.200Z"},
+    {"segment_id": "sess_a41f:spk3:45100", "speaker": "Demo Sam Lee 001", "text": "From the network side, the requirement is no application downtime during cutover. We can do weekend windows for both branches.", "start": 45.1, "end": 52.3, "language": "en", "completed": true, "confidence": 0.91, "absolute_start_time": "2026-11-17T02:00:49.100Z", "absolute_end_time": "2026-11-17T02:00:56.300Z"},
+    {"segment_id": "sess_a41f:spk1:53500", "speaker": "Demo Team Member 02", "text": "Understood. I'll send a phase-one proposal for the two branches with a weekend cutover plan by the end of next week.", "start": 53.5, "end": 60.1, "language": "en", "completed": true, "confidence": 0.94, "absolute_start_time": "2026-11-17T02:00:57.500Z", "absolute_end_time": "2026-11-17T02:01:04.100Z"},
+    {"segment_id": "sess_a41f:spk3:61800", "speaker": "Demo Sam Lee 001", "text": "One more thing. Does Singtel offer 24x7 security monitoring? Our auditors keep asking for evidence that someone is watching the network around the clock.", "start": 61.8, "end": 70.4, "language": "en", "completed": true, "confidence": 0.92, "absolute_start_time": "2026-11-17T02:01:05.800Z", "absolute_end_time": "2026-11-17T02:01:14.400Z"},
+    {"segment_id": "sess_a41f:spk3:71200", "speaker": "Demo Sam Lee 001", "text": "Specifically we need audit evidence: monthly reports and incident logs we can hand to the auditors.", "start": 71.2, "end": 76.9, "language": "en", "completed": true, "confidence": 0.9, "absolute_start_time": "2026-11-17T02:01:15.200Z", "absolute_end_time": "2026-11-17T02:01:20.900Z"},
+    {"segment_id": "sess_a41f:spk1:78000", "speaker": "Demo Team Member 02", "text": "We do, through our managed security operations service. It includes monthly compliance reporting. I can share a short overview.", "start": 78.0, "end": 85.2, "language": "en", "completed": true, "confidence": 0.93, "absolute_start_time": "2026-11-17T02:01:22.000Z", "absolute_end_time": "2026-11-17T02:01:29.200Z"},
+    {"segment_id": "sess_a41f:spk2:86400", "speaker": "Demo Avery Tan 001", "text": "Send the overview, but no commitment yet. We might consider monitoring in Q1 2027 once phase one is stable and next year's budget is confirmed.", "start": 86.4, "end": 95.0, "language": "en", "completed": true, "confidence": 0.94, "absolute_start_time": "2026-11-17T02:01:30.400Z", "absolute_end_time": "2026-11-17T02:01:39.000Z"},
+    {"segment_id": "sess_a41f:spk1:96200", "speaker": "Demo Team Member 02", "text": "That works. To recap: RCA accepted, phase-one proposal for two branches from me next week, and a security monitoring overview for Q1 planning. Thanks both.", "start": 96.2, "end": 105.8, "language": "en", "completed": true, "confidence": 0.95, "absolute_start_time": "2026-11-17T02:01:40.200Z", "absolute_end_time": "2026-11-17T02:01:49.800Z"}
+  ]
+}

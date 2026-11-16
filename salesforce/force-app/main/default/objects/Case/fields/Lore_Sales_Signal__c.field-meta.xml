@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Lore_Sales_Signal__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>Support ticket carries a sales signal.</description>
+    <label>Lore Sales Signal</label>
+    <type>Checkbox</type>
+</CustomField>
